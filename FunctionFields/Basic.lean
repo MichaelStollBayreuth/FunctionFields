@@ -19,11 +19,6 @@ We follow Chapter I of the textbook *Algebraic Function Fields and Codes*
 by Henning Stichtenoth (Springer Universitext, 1993).
 -/
 
-def Algebra.trans {R S A : Type*} [CommRing R] [CommRing S] [CommRing A] [Algebra R S]
-    [Algebra S A] :
-    Algebra R A :=
-  RingHom.toAlgebra <| (algebraMap S A).comp <| algebraMap R S
-
 /-!
 ### Definition of algebraic function fields of one variable
 -/
@@ -87,6 +82,16 @@ def fieldOfConstants : Subalgebra F FF.carrier := integralClosure F FF.carrier
 /-- An algebraic function field of one variable is *geometric* if its field of constants
 is the base field. -/
 def IsGeometric : Prop := FF.fieldOfConstants = ⊥
+
+/-!
+### Places
+-/
+
+/-- A *place* of an algebraic function field of one variable is a valuation subring that contains
+the base field. -/
+structure Place extends ValuationSubring (FF.carrier) where
+  trivial_on_base_field :
+      (IntermediateField.toSubalgebra (⊥ : IntermediateField F FF.carrier)).toSubring ≤ carrier
 
 
 
