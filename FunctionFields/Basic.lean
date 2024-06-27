@@ -1,5 +1,4 @@
-import Mathlib.NumberTheory.FunctionField
-
+import Mathlib
 /-!
 # Algebraic function fields of one variable
 
@@ -28,6 +27,25 @@ section Def
 open scoped IntermediateField
 
 universe u
+
+/-
+What is in Mathlib:
+
+variable (F FF : Type) [Field F] [Field FF]
+
+abbrev FunctionField [Algebra (RatFunc F) FF] : Prop :=
+  FiniteDimensional (RatFunc F) FF
+
+This has the disadvantage of fixing `RatFunc F` as a "base field", but we would like
+to treat `F` as the base field and have a subfield isomorphic to `RatFunc F`.
+
+(Also, this is not universe polynomorphic and should be called `IsFunctionField`...)
+-/
+
+/-
+One possible definition: this bundles a carrier type with the data of an element `x`
+transcendental over the base field `F` and such that we have a finite extension of `F(x)`.
+-/
 
 variable (F : Type u) [Field F]
 
@@ -69,6 +87,24 @@ def RatFunc.toAlgFunctionField1 : AlgFunctionField1 F where
       exact ⟨a.num, a.denom, by simp only [aeval_X_eq_algebraMap, num_div_denom]⟩
     exact this ▸ Module.finite_of_rank_eq_one IntermediateField.rank_top
 
+/-
+An alternative is to define a characteristic predicate:
+-/
+
+def IsFunctionField (FF : Type*) [Field FF] [Algebra F FF] : Prop :=
+  ∃ x : FF, ¬ IsAlgebraic F x ∧ FiniteDimensional F⟮x⟯ FF
+
+lemma RatFunc.isFunctionField : IsFunctionField F (RatFunc F) := by
+  refine ⟨X, ?_, ?_⟩
+  · rw [isAlgebraic_iff_not_injective, not_not, injective_iff_map_eq_zero]
+    intro p
+    simp only [aeval_X_eq_algebraMap, algebraMap_eq_zero_iff, imp_self]
+  · have : F⟮X⟯ = (⊤ : IntermediateField F (RatFunc F)) := by
+      refine IntermediateField.ext fun a ↦ ⟨fun _ ↦ trivial, fun _ ↦ ?_⟩
+      rw [IntermediateField.mem_adjoin_simple_iff]
+      exact ⟨a.num, a.denom, by simp only [aeval_X_eq_algebraMap, num_div_denom]⟩
+    exact this ▸ Module.finite_of_rank_eq_one IntermediateField.rank_top
+
 end Def
 
 namespace AlgFunctionField1
@@ -93,6 +129,43 @@ structure Place extends ValuationSubring (FF.carrier) where
   trivial_on_base_field :
       (IntermediateField.toSubalgebra (⊥ : IntermediateField F FF.carrier)).toSubring ≤ carrier
 
+variable {FF}
 
+/-- The valuation ring corresponding to a place as a subalgebra. -/
+def Place.toSubalgebra (v : Place FF) : Subalgebra F FF.carrier where
+  carrier := v.carrier
+  mul_mem' := v.mul_mem'
+  add_mem' := v.add_mem'
+  algebraMap_mem' r :=
+    sorry
+
+lemma Place.fieldOfConstants_le (v : Place FF) : FF.fieldOfConstants ≤ v.toSubalgebra := by
+  sorry
 
 end AlgFunctionField1
+
+section IsFF
+
+variable {F FF : Type*} [Field F] [Field FF] [Algebra F FF] (hF : IsFunctionField F FF)
+
+namespace IsFunctionField
+
+variable (F FF) in
+/-- The *field of constants*  of an algebraic function field `FF` of one variable over `F`
+is the relative algebraic closure of `F` in `FF`. -/
+def fieldOfConstants : Subalgebra F FF := integralClosure F FF
+
+/-- An algebraic function field of one variable is *geometric* if its field of constants
+is the base field. -/
+def IsGeometric : Prop := IsFunctionField.fieldOfConstants F FF = ⊥
+
+/-- A *place* of an algebraic function field of one variable is a valuation subring that contains
+the base field. -/
+structure Place extends ValuationSubring FF, Subalgebra F FF
+
+#check Place.toValuationSubring
+#check Place.toSubalgebra
+
+end IsFunctionField
+
+end IsFF
