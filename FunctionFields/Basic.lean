@@ -91,10 +91,38 @@ def RatFunc.toAlgFunctionField1 : AlgFunctionField1 F where
 An alternative is to define a characteristic predicate:
 -/
 
-def IsFunctionField (FF : Type*) [Field FF] [Algebra F FF] : Prop :=
+def IsFunctionField' (FF : Type*) [Field FF] [Algebra F FF] : Prop :=
   ∃ x : FF, ¬ IsAlgebraic F x ∧ FiniteDimensional F⟮x⟯ FF
 
-lemma RatFunc.isFunctionField : IsFunctionField F (RatFunc F) := by
+def IsFunctionField (FF : Type*) [Field FF] [Algebra F FF] : Prop :=
+  ∃ (_ : Algebra (RatFunc F) FF) (_ : IsScalarTower F (RatFunc F) FF),
+    FiniteDimensional (RatFunc F) FF
+
+lemma isFunctionField'_iff_isFunctionField (FF : Type*) [Field FF] [Algebra F FF] :
+    IsFunctionField' F FF ↔ IsFunctionField F FF := by
+  refine ⟨fun H ↦ ?_, fun H ↦ ?_⟩
+  · obtain ⟨x, hx, h⟩ := H
+    have nzd : nonZeroDivisors (Polynomial F) ≤ Submonoid.comap (Polynomial.eval₂RingHom (algebraMap F FF) x) (nonZeroDivisors FF) := sorry
+    let φ : RatFunc F →+* FF := RatFunc.liftRingHom (Polynomial.eval₂RingHom (algebraMap F FF) x) nzd
+    let alg := φ.toAlgebra
+    refine ⟨alg, IsScalarTower.of_algebraMap_eq fun a ↦ ?_, ?_⟩
+    · rw [show algebraMap (RatFunc F) FF = φ from rfl, RatFunc.algebraMap_eq_C,
+        RatFunc.liftRingHom_apply]
+      simp only [RatFunc.num_C, Polynomial.coe_eval₂RingHom, Polynomial.eval₂_C, RatFunc.denom_C,
+        map_one, div_one]
+    · have hφ : φ.range = F⟮x⟯.toSubring := sorry
+      have : Module (RatFunc F) ↥F⟮x⟯.toSubring := by
+        convert_to Module (RatFunc F) ↥φ.range
+        · rw [hφ]
+        · sorry
+        sorry -- apply Algebra.toModule
+      have : IsScalarTower (RatFunc F) (↥F⟮x⟯.toSubring) FF := sorry
+      have H₁ : Module.Finite (RatFunc F) ↥F⟮x⟯.toSubring := sorry
+      have H₂ : Module.Finite (↥F⟮x⟯.toSubring) FF := sorry
+      exact Module.Finite.trans F⟮x⟯.toSubring FF
+  · sorry
+
+lemma RatFunc.isFunctionField' : IsFunctionField' F (RatFunc F) := by
   refine ⟨X, ?_, ?_⟩
   · rw [isAlgebraic_iff_not_injective, not_not, injective_iff_map_eq_zero]
     intro p
@@ -105,8 +133,120 @@ lemma RatFunc.isFunctionField : IsFunctionField F (RatFunc F) := by
       exact ⟨a.num, a.denom, by simp only [aeval_X_eq_algebraMap, num_div_denom]⟩
     exact this ▸ Module.finite_of_rank_eq_one IntermediateField.rank_top
 
+lemma RatFunc.isFunctionField : IsFunctionField F (RatFunc F) :=
+  ⟨inferInstance, IsScalarTower.right, Module.Finite.self (RatFunc F)⟩
+
+variable (f : Polynomial (RatFunc F))
+
+variable {F} in
+abbrev functionField_of_polynomial := AdjoinRoot f
+
+noncomputable
+instance [Fact <| Irreducible f] : Field (functionField_of_polynomial f) :=
+  inferInstance
+
+variable {F f} in
+lemma AdjoinRoot.finiteDimensional (hf₀ : f ≠ 0) :
+    FiniteDimensional (RatFunc F) (AdjoinRoot f) := by
+  sorry
+
+lemma functionField_of_polynomial.isFunctionField [hf : Fact <| Irreducible f] :
+    IsFunctionField F (functionField_of_polynomial f) :=
+  ⟨inferInstance, inferInstance, AdjoinRoot.finiteDimensional (Irreducible.ne_zero <| hf.out)⟩
+
 end Def
 
+
+/-!
+### Places
+-/
+
+section Place
+
+variable (F FF : Type*) [Field F] [Field FF] [Algebra F FF]
+
+namespace IsFunctionField
+
+/-- The *field of constants*  of an algebraic function field `FF` of one variable over `F`
+is the relative algebraic closure of `F` in `FF`. -/
+abbrev fieldOfConstants : Subalgebra F FF := integralClosure F FF
+
+instance fielfOfConstants_field : Field (fieldOfConstants F FF) := by
+  sorry
+
+/-- An algebraic function field of one variable is *geometric* if its field of constants
+is the base field. -/
+def IsGeometric : Prop := IsFunctionField.fieldOfConstants F FF = ⊥
+
+/-- A *place* of an algebraic function field of one variable is a valuation subring that contains
+the base field. -/
+structure Place extends ValuationSubring FF, Subalgebra F FF
+
+#check Place.toValuationSubring
+#check Place.toSubalgebra
+
+variable {F FF}
+
+lemma Place.isLocalRing (v : IsFunctionField.Place F FF) : LocalRing v.toValuationSubring :=
+  inferInstance
+
+#check ValuationRing.instIsBezout
+#check IsBezout.nonemptyGCDMonoid
+#check GCDMonoid.toIsIntegrallyClosed
+
+
+instance {O} [CommRing O] [IsDomain O] [ValuationRing O] : IsIntegrallyClosed O :=
+  inferInstance
+
+lemma xyz (A : Subalgebra F FF) [IsIntegrallyClosed A] :
+    integralClosure F FF ≤ A := by
+
+  sorry
+
+lemma Place.fieldOfConstants_le (v : IsFunctionField.Place F FF) :
+    IsFunctionField.fieldOfConstants F FF ≤ v.toSubalgebra :=
+  xyz _
+
+  /- rw [SetLike.le_def, fieldOfConstants]
+  intro z hz
+  contrapose! hz
+  intro h
+  have hz₀ : z ≠ 0 := by
+    contrapose! hz
+    rw [hz]
+    exact Subalgebra.zero_mem v.toSubalgebra
+  have hz' : z⁻¹ ∈ v.toValuationSubring := (ValuationSubring.mem_or_inv_mem _ _).resolve_left hz
+  have hz'' : z⁻¹ ∈ integralClosure F FF := sorry
+    -- adjoin_le_iff.mpr (Set.singleton_subset_iff.mpr hz) int.inv_mem_adjoin h
+  obtain ⟨p, hpm, hp⟩ : IsIntegral F z := h
+  have hpd : 1 ≤ p.natDegree := sorry
+  have hz_eq :
+      z = -(p - Polynomial.X ^ p.natDegree).eval₂ (algebraMap F FF) z * (z⁻¹) ^ (p.natDegree - 1) := by
+    simp only [Polynomial.eval₂_sub, hp, Polynomial.eval₂_X_pow, zero_sub, neg_neg, inv_pow]
+    have help : z ^ p.natDegree = z ^ (1 + (p.natDegree - 1)) := by
+      congr
+      exact (Nat.add_sub_of_le hpd).symm
+    rw [help, pow_add, pow_one, mul_assoc, mul_inv_cancel (pow_ne_zero (p.natDegree - 1) hz₀),
+      mul_one]
+  have hzi : Invertible z := invertibleOfNonzero hz₀
+  rw [← Polynomial.eval₂_reverse_eq_zero_iff (algebraMap F FF) z p, invOf_eq_inv] at hp
+  have hz_eq' : z = -(p.reverse / Polynomial.X).eval₂ (algebraMap F FF) z⁻¹ := by
+    #check Polynomial.divX
+    sorry
+  contrapose! hz
+  rw [hz_eq']
+  simp only [neg_mem_iff, Polynomial.eval₂, Polynomial.sum]
+  refine Subalgebra.sum_mem v.toSubalgebra fun i hi ↦ ?_
+  refine Subalgebra.mul_mem v.toSubalgebra ?_ <| Subalgebra.pow_mem _ hz' i
+  exact Subalgebra.algebraMap_mem v.toSubalgebra ((p.reverse / Polynomial.X).coeff i) -/
+
+
+
+end IsFunctionField
+
+end Place
+
+#exit
 namespace AlgFunctionField1
 
 variable {F : Type*} [Field F] (FF : AlgFunctionField1 F)
@@ -118,10 +258,6 @@ def fieldOfConstants : Subalgebra F FF.carrier := integralClosure F FF.carrier
 /-- An algebraic function field of one variable is *geometric* if its field of constants
 is the base field. -/
 def IsGeometric : Prop := FF.fieldOfConstants = ⊥
-
-/-!
-### Places
--/
 
 /-- A *place* of an algebraic function field of one variable is a valuation subring that contains
 the base field. -/
@@ -143,29 +279,3 @@ lemma Place.fieldOfConstants_le (v : Place FF) : FF.fieldOfConstants ≤ v.toSub
   sorry
 
 end AlgFunctionField1
-
-section IsFF
-
-variable {F FF : Type*} [Field F] [Field FF] [Algebra F FF] (hF : IsFunctionField F FF)
-
-namespace IsFunctionField
-
-variable (F FF) in
-/-- The *field of constants*  of an algebraic function field `FF` of one variable over `F`
-is the relative algebraic closure of `F` in `FF`. -/
-def fieldOfConstants : Subalgebra F FF := integralClosure F FF
-
-/-- An algebraic function field of one variable is *geometric* if its field of constants
-is the base field. -/
-def IsGeometric : Prop := IsFunctionField.fieldOfConstants F FF = ⊥
-
-/-- A *place* of an algebraic function field of one variable is a valuation subring that contains
-the base field. -/
-structure Place extends ValuationSubring FF, Subalgebra F FF
-
-#check Place.toValuationSubring
-#check Place.toSubalgebra
-
-end IsFunctionField
-
-end IsFF
