@@ -1,6 +1,7 @@
 import Mathlib.NumberTheory.FunctionField
 import Mathlib.Order.CompletePartialOrder
 import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
+import Mathlib
 /-!
 # Algebraic function fields of one variable
 
@@ -64,11 +65,16 @@ lemma RatFunc.isFunctionField : IsFunctionField F (RatFunc F) :=
 
 /-- The field obtained by adjoining the root of an irreducible polynomial `f ∈ F(X)[Y]`
 to the rational function field over `F` is a function field. -/
-lemma functionField_of_polynomial.isFunctionField (f : Polynomial (RatFunc F))
+lemma Polynomial.adjoinRoot_isFunctionField (f : Polynomial (RatFunc F))
     [hf : Fact <| Irreducible f] :
     IsFunctionField F (AdjoinRoot f) :=
   ⟨inferInstance, inferInstance,
     PowerBasis.finite <| AdjoinRoot.powerBasis (Irreducible.ne_zero <| hf.out)⟩
+
+/-
+We can relate our definition to the definition currently in Mathlib.
+(This is slightly awkward as we need to produce suitable instances on the fly.)
+-/
 
 lemma FunctionField.isFunctionField {F FF : Type} [Field F] [Field FF] [Algebra (RatFunc F) FF]
     (h : FunctionField F FF) :
@@ -85,6 +91,41 @@ lemma IsFunctionField.functionField {F FF : Type} [Field F] [Field FF] [Algebra 
 
 end Def
 
+section Transcendental
+/-!
+### Transcendental elements
+
+The goal here is to show that if `x : FF` is transcendental over `F`, then
+`F⟮x⟯` is isomorphic as an `F`-algebra to `RatFunc F`.
+-/
+
+open scoped IntermediateField
+
+variable {F FF} [Field F] [Field FF] [Algebra F FF]
+
+def RatFunc.algHom_of_not_isAlgebraic {x : FF} (hx : ¬ IsAlgebraic F x) :
+    RatFunc F →ₐ[F] FF := by
+  refine liftAlgHom (Polynomial.aeval x) fun c hc ↦ ?_
+  simp only [mem_nonZeroDivisors_iff, mul_eq_zero, forall_eq_or_imp, true_and, Submonoid.mem_comap,
+    Submonoid.mem_mk, Subsemigroup.mem_mk, Set.mem_setOf_eq]
+  intro _ h
+  exfalso
+  apply hx
+  rw [isAlgebraic_iff_not_injective, injective_iff_map_eq_zero]
+  push_neg
+  exact ⟨_, h, nonZeroDivisors.ne_zero hc⟩
+
+/- noncomputable
+def RatFunc.algEquiv_of_not_isAlgebraic {x : FF} (hx : ¬ IsAlgebraic F x) :
+    RatFunc F ≃ₐ[F] F⟮x⟯ := by
+  let f := algHom_of_not_isAlgebraic hx
+  refine AlgEquiv.ofBijective f ?_ -/
+
+
+end Transcendental
+
+
+section Place
 
 /-!
 ### Places
@@ -94,7 +135,6 @@ end Def
 NOTE: Junyan has the definition of `Place` (in greater generality) and `Place.integralClosure_le`
 in #14206
 -/
-section Place
 
 variable (F FF : Type*) [Field F] [Field FF] [Algebra F FF]
 
