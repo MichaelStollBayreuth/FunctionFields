@@ -132,6 +132,7 @@ lemma _root_.integralClosure_le_subAlgebra_of_isIntegrallyClosedIn (A : Subalgeb
 lemma Place.isFractionRing (v : IsFunctionField.Place F FF) : IsFractionRing v.toSubalgebra FF :=
   ValuationSubring.instIsFractionRingSubtypeMem ..
 
+/-- The valuation ring corresponding to a place contains the field of constants. -/
 lemma Place.fieldOfConstants_le (v : IsFunctionField.Place F FF) :
     IsFunctionField.fieldOfConstants F FF ≤ v.toSubalgebra :=
   have : IsFractionRing v.toSubalgebra FF := v.isFractionRing
