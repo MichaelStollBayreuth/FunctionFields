@@ -207,6 +207,9 @@ lemma _root_.integralClosure_le_subAlgebra_of_isIntegrallyClosedIn (A : Subalgeb
   obtain ⟨⟨y, hy⟩, rfl⟩ := this
   exact hy
 
+lemma exists_place {x : FF} (hx : ¬ IsAlgebraic F x) : ∃ (v : Place F FF) (h : x ∈ v.toSubalgebra), ¬ IsUnit (⟨x, h⟩ : v.toSubalgebra) :=
+  sorry
+
 lemma Place.isFractionRing (v : Place F FF) : IsFractionRing v.toSubalgebra FF :=
   ValuationSubring.instIsFractionRingSubtypeMem ..
 
@@ -226,22 +229,25 @@ noncomputable instance : Algebra F v.ResidueField :=
 noncomputable def Place.degree (v : Place F FF) : ℕ :=
   FiniteDimensional.finrank F (LocalRing.ResidueField v.toSubalgebra)
 
-instance (v : Place F FF) : IsNoetherianRing v.toSubalgebra := by
+instance Place.instIsNoetherianRing (h : IsFunctionField F FF) (v : Place F FF) : IsNoetherianRing v.toSubalgebra := by
   sorry
 
-instance (v : Place F FF) (h_field : ¬ IsField v.toSubalgebra) : DiscreteValuationRing v.toSubalgebra := by
-  simp_rw [List.TFAE.out (DiscreteValuationRing.TFAE v.toSubalgebra h_field) 0 1]
+instance (h : IsFunctionField F FF) (v : Place F FF) (h_field : ¬ IsField v.toSubalgebra) : DiscreteValuationRing v.toSubalgebra := by
+  have : IsNoetherianRing v.toSubalgebra := by exact Place.instIsNoetherianRing h v
+  simp_rw [(DiscreteValuationRing.TFAE v.toSubalgebra h_field).out 0 1]
   infer_instance
-end IsFunctionField
 
 open scoped IntermediateField
 
 lemma findim (h : IsFunctionField F FF) {x : FF} (hx : ¬ IsAlgebraic F x) :
     FiniteDimensional F⟮x⟯ FF := by
-  let ⟨_, _, hfindim⟩ := h
-
+  let ⟨v, h, h_unit⟩ := exists_place hx
+  let v' := v.toValuationSubring.valuation
+  wlog hx_pos : 0 < v' x generalizing x
+  · sorry
   sorry
 
+end IsFunctionField
 end Place
 #minimize_imports
 #exit
