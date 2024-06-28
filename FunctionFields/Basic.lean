@@ -198,14 +198,29 @@ lemma Place.isLocalRing (v : IsFunctionField.Place F FF) : LocalRing v.toValuati
 instance {O} [CommRing O] [IsDomain O] [ValuationRing O] : IsIntegrallyClosed O :=
   inferInstance
 
-lemma xyz (A : Subalgebra F FF) [IsIntegrallyClosed A] :
-    integralClosure F FF ≤ A := by
+lemma _root_.IsIntegral.subalgebra (A : Subalgebra F FF) (x : FF) (hx : IsIntegral F x) : IsIntegral A x := by
+  obtain ⟨p, hp_monic, hp⟩ := hx
+  use p.map (algebraMap F A)
+  rw [Polynomial.eval₂_map]
+  refine ⟨hp_monic.map _, hp⟩
 
-  sorry
+lemma _root_.integralClosure_le_subAlgebra_of_isIntegrallyClosedIn (A : Subalgebra F FF) [hA : IsIntegrallyClosedIn A FF] :
+    integralClosure F FF ≤ A := by
+  intro x hx
+  have : IsIntegral A x := IsIntegral.subalgebra A x hx
+  rw [IsIntegrallyClosedIn.isIntegral_iff] at this
+  obtain ⟨⟨y, hy⟩, rfl⟩ := this
+  exact hy
+
+lemma Place.isFractionRing (v : IsFunctionField.Place F FF) : IsFractionRing v.toSubalgebra FF := ValuationSubring.instIsFractionRingSubtypeMem ..
 
 lemma Place.fieldOfConstants_le (v : IsFunctionField.Place F FF) :
     IsFunctionField.fieldOfConstants F FF ≤ v.toSubalgebra :=
-  xyz _
+  have : IsFractionRing v.toSubalgebra FF := v.isFractionRing
+  have : IsIntegrallyClosedIn v.toSubalgebra FF := by
+    apply isIntegrallyClosed_iff_isIntegrallyClosedIn FF |>.mp
+    infer_instance
+  integralClosure_le_subAlgebra_of_isIntegrallyClosedIn _
 
   /- rw [SetLike.le_def, fieldOfConstants]
   intro z hz
