@@ -101,26 +101,20 @@ instance fielfOfConstants_field : Field (fieldOfConstants F FF) := by
 is the base field. -/
 def IsGeometric : Prop := IsFunctionField.fieldOfConstants F FF = ⊥
 
-/-- A *place* of an algebraic function field of one variable is a valuation subring that contains
+/-- A *place* of a field that is an `F`-algebra is a valuation subring that contains
 the base field. -/
 structure Place extends ValuationSubring FF, Subalgebra F FF
-
-#check Place.toValuationSubring
-#check Place.toSubalgebra
 
 variable {F FF}
 
 lemma Place.isLocalRing (v : IsFunctionField.Place F FF) : LocalRing v.toValuationSubring :=
   inferInstance
 
-#check ValuationRing.instIsBezout
-#check IsBezout.nonemptyGCDMonoid
-#check GCDMonoid.toIsIntegrallyClosed
-
-
+-- A shortcut instance for speeding up tc synthesis below
 instance {O} [CommRing O] [IsDomain O] [ValuationRing O] : IsIntegrallyClosed O :=
   inferInstance
 
+-- compare #14206. Can be removed once #14206 is merged.
 lemma _root_.IsIntegral.subalgebra (A : Subalgebra F FF) (x : FF) (hx : IsIntegral F x) : IsIntegral A x := by
   obtain ⟨p, hp_monic, hp⟩ := hx
   use p.map (algebraMap F A)
@@ -135,7 +129,8 @@ lemma _root_.integralClosure_le_subAlgebra_of_isIntegrallyClosedIn (A : Subalgeb
   obtain ⟨⟨y, hy⟩, rfl⟩ := this
   exact hy
 
-lemma Place.isFractionRing (v : IsFunctionField.Place F FF) : IsFractionRing v.toSubalgebra FF := ValuationSubring.instIsFractionRingSubtypeMem ..
+lemma Place.isFractionRing (v : IsFunctionField.Place F FF) : IsFractionRing v.toSubalgebra FF :=
+  ValuationSubring.instIsFractionRingSubtypeMem ..
 
 lemma Place.fieldOfConstants_le (v : IsFunctionField.Place F FF) :
     IsFunctionField.fieldOfConstants F FF ≤ v.toSubalgebra :=
@@ -144,41 +139,6 @@ lemma Place.fieldOfConstants_le (v : IsFunctionField.Place F FF) :
     apply isIntegrallyClosed_iff_isIntegrallyClosedIn FF |>.mp
     infer_instance
   integralClosure_le_subAlgebra_of_isIntegrallyClosedIn _
-
-  /- rw [SetLike.le_def, fieldOfConstants]
-  intro z hz
-  contrapose! hz
-  intro h
-  have hz₀ : z ≠ 0 := by
-    contrapose! hz
-    rw [hz]
-    exact Subalgebra.zero_mem v.toSubalgebra
-  have hz' : z⁻¹ ∈ v.toValuationSubring := (ValuationSubring.mem_or_inv_mem _ _).resolve_left hz
-  have hz'' : z⁻¹ ∈ integralClosure F FF := sorry
-    -- adjoin_le_iff.mpr (Set.singleton_subset_iff.mpr hz) int.inv_mem_adjoin h
-  obtain ⟨p, hpm, hp⟩ : IsIntegral F z := h
-  have hpd : 1 ≤ p.natDegree := sorry
-  have hz_eq :
-      z = -(p - Polynomial.X ^ p.natDegree).eval₂ (algebraMap F FF) z * (z⁻¹) ^ (p.natDegree - 1) := by
-    simp only [Polynomial.eval₂_sub, hp, Polynomial.eval₂_X_pow, zero_sub, neg_neg, inv_pow]
-    have help : z ^ p.natDegree = z ^ (1 + (p.natDegree - 1)) := by
-      congr
-      exact (Nat.add_sub_of_le hpd).symm
-    rw [help, pow_add, pow_one, mul_assoc, mul_inv_cancel (pow_ne_zero (p.natDegree - 1) hz₀),
-      mul_one]
-  have hzi : Invertible z := invertibleOfNonzero hz₀
-  rw [← Polynomial.eval₂_reverse_eq_zero_iff (algebraMap F FF) z p, invOf_eq_inv] at hp
-  have hz_eq' : z = -(p.reverse / Polynomial.X).eval₂ (algebraMap F FF) z⁻¹ := by
-    #check Polynomial.divX
-    sorry
-  contrapose! hz
-  rw [hz_eq']
-  simp only [neg_mem_iff, Polynomial.eval₂, Polynomial.sum]
-  refine Subalgebra.sum_mem v.toSubalgebra fun i hi ↦ ?_
-  refine Subalgebra.mul_mem v.toSubalgebra ?_ <| Subalgebra.pow_mem _ hz' i
-  exact Subalgebra.algebraMap_mem v.toSubalgebra ((p.reverse / Polynomial.X).coeff i) -/
-
-
 
 end IsFunctionField
 
