@@ -90,16 +90,13 @@ variable (F FF : Type*) [Field F] [Field FF] [Algebra F FF]
 
 namespace IsFunctionField
 
-/-- The *field of constants*  of an algebraic function field `FF` of one variable over `F`
-is the relative algebraic closure of `F` in `FF`. -/
+/-- The *field of constants*  of an `F`-agebra `FF` that is a field is the relative algebraic
+closure of `F` in `FF`. -/
 abbrev fieldOfConstants : Subalgebra F FF := integralClosure F FF
-
-instance fielfOfConstants_field : Field (fieldOfConstants F FF) := by
-  sorry
 
 /-- An algebraic function field of one variable is *geometric* if its field of constants
 is the base field. -/
-def IsGeometric : Prop := IsFunctionField.fieldOfConstants F FF = ⊥
+def IsGeometric : Prop := fieldOfConstants F FF = ⊥
 
 /-- A *place* of a field that is an `F`-algebra is a valuation subring that contains
 the base field. -/
@@ -107,7 +104,7 @@ structure Place extends ValuationSubring FF, Subalgebra F FF
 
 variable {F FF}
 
-lemma Place.isLocalRing (v : IsFunctionField.Place F FF) : LocalRing v.toValuationSubring :=
+lemma Place.isLocalRing (v : Place F FF) : LocalRing v.toValuationSubring :=
   inferInstance
 
 -- A shortcut instance for speeding up tc synthesis below
@@ -129,16 +126,14 @@ lemma _root_.integralClosure_le_subAlgebra_of_isIntegrallyClosedIn (A : Subalgeb
   obtain ⟨⟨y, hy⟩, rfl⟩ := this
   exact hy
 
-lemma Place.isFractionRing (v : IsFunctionField.Place F FF) : IsFractionRing v.toSubalgebra FF :=
+lemma Place.isFractionRing (v : Place F FF) : IsFractionRing v.toSubalgebra FF :=
   ValuationSubring.instIsFractionRingSubtypeMem ..
 
 /-- The valuation ring corresponding to a place contains the field of constants. -/
-lemma Place.fieldOfConstants_le (v : IsFunctionField.Place F FF) :
-    IsFunctionField.fieldOfConstants F FF ≤ v.toSubalgebra :=
+lemma Place.fieldOfConstants_le (v : Place F FF) : fieldOfConstants F FF ≤ v.toSubalgebra :=
   have : IsFractionRing v.toSubalgebra FF := v.isFractionRing
-  have : IsIntegrallyClosedIn v.toSubalgebra FF := by
-    apply isIntegrallyClosed_iff_isIntegrallyClosedIn FF |>.mp
-    infer_instance
+  have : IsIntegrallyClosedIn v.toSubalgebra FF :=
+    isIntegrallyClosed_iff_isIntegrallyClosedIn FF |>.mp inferInstance
   integralClosure_le_subAlgebra_of_isIntegrallyClosedIn _
 
 end IsFunctionField
