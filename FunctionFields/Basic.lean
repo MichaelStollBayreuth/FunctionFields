@@ -102,20 +102,38 @@ The goal here is to show that if `x : FF` is transcendental over `F`, then
 open scoped IntermediateField
 
 variable {F FF} [Field F] [Field FF] [Algebra F FF]
+#check IntermediateField.adjoin_simple_adjoin_simple
+#check IntermediateField.AdjoinSimple.gen
+#check IntermediateField.AdjoinSimple.coe_gen
+def RatFunc.algHom_intermediateField_of_not_isAlgebraic {x : FF} (hx : ¬ IsAlgebraic F x) :
+    RatFunc F →ₐ[F] F⟮x⟯ :=
+  letI x' := IntermediateField.AdjoinSimple.gen F x
+  liftAlgHom (Polynomial.aeval x') fun c hc ↦ by
+    simp only [mem_nonZeroDivisors_iff, mul_eq_zero, forall_eq_or_imp, true_and, Submonoid.mem_comap,
+      Submonoid.mem_mk, Subsemigroup.mem_mk, Set.mem_setOf_eq]
+    intro _ h
+    exfalso
+    apply hx
+    rw [isAlgebraic_iff_not_injective, injective_iff_map_eq_zero]
+    push_neg
+    refine ⟨_, ?_, nonZeroDivisors.ne_zero hc⟩
+    have := IntermediateField.AdjoinSimple.coe_gen F x
+    have : Polynomial.aeval x c = Polynomial.aeval x' c := by
+      simp_rw [←this]
+      exact Subalgebra.aeval_coe F⟮x⟯.toSubalgebra (IntermediateField.AdjoinSimple.gen F x) c
+    simp [this, h]
 
 /-- The `F`-algebra homomorphism from `RatFunc F` to `FF` given by evaluating at a
 transcendental element of `FF`. -/
 def RatFunc.algHom_of_not_isAlgebraic {x : FF} (hx : ¬ IsAlgebraic F x) :
-    RatFunc F →ₐ[F] FF := by
-  refine liftAlgHom (Polynomial.aeval x) fun c hc ↦ ?_
-  simp only [mem_nonZeroDivisors_iff, mul_eq_zero, forall_eq_or_imp, true_and, Submonoid.mem_comap,
-    Submonoid.mem_mk, Subsemigroup.mem_mk, Set.mem_setOf_eq]
-  intro _ h
-  exfalso
-  apply hx
-  rw [isAlgebraic_iff_not_injective, injective_iff_map_eq_zero]
-  push_neg
-  exact ⟨_, h, nonZeroDivisors.ne_zero hc⟩
+    RatFunc F →ₐ[F] FF :=
+ (IntermediateField.val F⟮x⟯).comp (RatFunc.algHom_intermediateField_of_not_isAlgebraic hx)
+
+def RatFunc.algebraOfNotIsAlgebraic {x : FF} (hx : ¬ IsAlgebraic F x) :
+    Algebra (RatFunc F) F⟮x⟯ := (RatFunc.algHom_intermediateField_of_not_isAlgebraic hx).toAlgebra
+
+
+lemma tmp {x : FF} (hx : ¬ IsAlgebraic F x) : let _ : Module (RatFunc F) F⟮x⟯ := RatFunc.algebraOfNotIsAlgebraic hx |>.toModule; FiniteDimensional (RatFunc F) F⟮x⟯ := sorry
 
 lemma isFunctionField_of_not_isAlgebraic {x : FF} (hx : ¬ IsAlgebraic F x)
     (hfin : FiniteDimensional F⟮x⟯ FF) :
@@ -123,16 +141,17 @@ lemma isFunctionField_of_not_isAlgebraic {x : FF} (hx : ¬ IsAlgebraic F x)
   let φ := RatFunc.algHom_of_not_isAlgebraic hx
   let inst : Algebra (RatFunc F) FF := φ.toRingHom.toAlgebra
   refine ⟨inst, IsScalarTower.of_algHom φ, ?_⟩
-  -- have : FiniteDimensional (RatFunc F) F⟮x⟯ := sorry
-  -- refine FiniteDimensional.trans (RatFunc F) F⟮x⟯ FF
-  sorry
-
+  let _ : Algebra (RatFunc F) F⟮x⟯ := RatFunc.algebraOfNotIsAlgebraic hx
+  convert FiniteDimensional.trans (RatFunc F) F⟮x⟯ FF
+  · exact IsScalarTower.of_algebraMap_eq' rfl
+  exact tmp hx
 /- noncomputable
 def RatFunc.algEquiv_of_not_isAlgebraic {x : FF} (hx : ¬ IsAlgebraic F x) :
     RatFunc F ≃ₐ[F] F⟮x⟯ := by
   let f := algHom_of_not_isAlgebraic hx
   refine AlgEquiv.ofBijective f ?_ -/
 
+#where
 
 end Transcendental
 
@@ -197,8 +216,31 @@ lemma Place.fieldOfConstants_le (v : Place F FF) : fieldOfConstants F FF ≤ v.t
   have : IsIntegrallyClosedIn v.toSubalgebra FF :=
     isIntegrallyClosed_iff_isIntegrallyClosedIn FF |>.mp inferInstance
   integralClosure_le_subAlgebra_of_isIntegrallyClosedIn _
+variable (v : Place F FF)
 
+abbrev Place.ResidueField := LocalRing.ResidueField v.toSubalgebra
+
+noncomputable instance : Algebra F v.ResidueField :=
+  (algebraMap v.toSubalgebra v.ResidueField).comp (algebraMap F v.toSubalgebra) |>.toAlgebra
+
+noncomputable def Place.degree (v : Place F FF) : ℕ :=
+  FiniteDimensional.finrank F (LocalRing.ResidueField v.toSubalgebra)
+
+instance (v : Place F FF) : IsNoetherianRing v.toSubalgebra := by
+  sorry
+
+instance (v : Place F FF) (h_field : ¬ IsField v.toSubalgebra) : DiscreteValuationRing v.toSubalgebra := by
+  simp_rw [List.TFAE.out (DiscreteValuationRing.TFAE v.toSubalgebra h_field) 0 1]
+  infer_instance
 end IsFunctionField
+
+open scoped IntermediateField
+
+lemma findim (h : IsFunctionField F FF) {x : FF} (hx : ¬ IsAlgebraic F x) :
+    FiniteDimensional F⟮x⟯ FF := by
+  let ⟨_, _, hfindim⟩ := h
+
+  sorry
 
 end Place
 #minimize_imports
