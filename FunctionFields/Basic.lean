@@ -103,6 +103,8 @@ open scoped IntermediateField
 
 variable {F FF} [Field F] [Field FF] [Algebra F FF]
 
+/-- The `F`-algebra homomorphism from `RatFunc F` to `FF` given by evaluating at a
+transcendental element of `FF`. -/
 def RatFunc.algHom_of_not_isAlgebraic {x : FF} (hx : ¬ IsAlgebraic F x) :
     RatFunc F →ₐ[F] FF := by
   refine liftAlgHom (Polynomial.aeval x) fun c hc ↦ ?_
@@ -114,6 +116,16 @@ def RatFunc.algHom_of_not_isAlgebraic {x : FF} (hx : ¬ IsAlgebraic F x) :
   rw [isAlgebraic_iff_not_injective, injective_iff_map_eq_zero]
   push_neg
   exact ⟨_, h, nonZeroDivisors.ne_zero hc⟩
+
+lemma isFunctionField_of_not_isAlgebraic {x : FF} (hx : ¬ IsAlgebraic F x)
+    (hfin : FiniteDimensional F⟮x⟯ FF) :
+    IsFunctionField F FF := by
+  let φ := RatFunc.algHom_of_not_isAlgebraic hx
+  let inst : Algebra (RatFunc F) FF := φ.toRingHom.toAlgebra
+  refine ⟨inst, IsScalarTower.of_algHom φ, ?_⟩
+  -- have : FiniteDimensional (RatFunc F) F⟮x⟯ := sorry
+  -- refine FiniteDimensional.trans (RatFunc F) F⟮x⟯ FF
+  sorry
 
 /- noncomputable
 def RatFunc.algEquiv_of_not_isAlgebraic {x : FF} (hx : ¬ IsAlgebraic F x) :
