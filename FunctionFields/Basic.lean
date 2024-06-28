@@ -1,4 +1,6 @@
-import Mathlib
+import Mathlib.NumberTheory.FunctionField
+import Mathlib.Order.CompletePartialOrder
+import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 /-!
 # Algebraic function fields of one variable
 
@@ -60,18 +62,26 @@ def IsFunctionField (FF : Type*) [Field FF] [Algebra F FF] : Prop :=
 lemma RatFunc.isFunctionField : IsFunctionField F (RatFunc F) :=
   ⟨inferInstance, IsScalarTower.right, Module.Finite.self (RatFunc F)⟩
 
-variable (f : Polynomial (RatFunc F))
-
-variable {F f} in
-lemma AdjoinRoot.finiteDimensional (hf₀ : f ≠ 0) :
-    FiniteDimensional (RatFunc F) (AdjoinRoot f) := by
-  sorry
-
 /-- The field obtained by adjoining the root of an irreducible polynomial `f ∈ F(X)[Y]`
 to the rational function field over `F` is a function field. -/
-lemma functionField_of_polynomial.isFunctionField [hf : Fact <| Irreducible f] :
+lemma functionField_of_polynomial.isFunctionField (f : Polynomial (RatFunc F))
+    [hf : Fact <| Irreducible f] :
     IsFunctionField F (AdjoinRoot f) :=
-  ⟨inferInstance, inferInstance, AdjoinRoot.finiteDimensional (Irreducible.ne_zero <| hf.out)⟩
+  ⟨inferInstance, inferInstance,
+    PowerBasis.finite <| AdjoinRoot.powerBasis (Irreducible.ne_zero <| hf.out)⟩
+
+lemma FunctionField.isFunctionField {F FF : Type} [Field F] [Field FF] [Algebra (RatFunc F) FF]
+    (h : FunctionField F FF) :
+    letI inst := (algebraMap (RatFunc F) FF).comp (algebraMap F (RatFunc F)) |>.toAlgebra
+    IsFunctionField F FF := by
+  let inst := ((algebraMap (RatFunc F) FF).comp (algebraMap F (RatFunc F))).toAlgebra
+  refine ⟨inferInstance, IsScalarTower.of_algebraMap_eq (congrFun rfl), h⟩
+
+lemma IsFunctionField.functionField {F FF : Type} [Field F] [Field FF] [Algebra F FF]
+    (h : IsFunctionField F FF) :
+    letI inst := Classical.choose h
+    FunctionField F FF :=
+  Classical.choose_spec <| Classical.choose_spec h
 
 end Def
 
@@ -139,7 +149,7 @@ lemma Place.fieldOfConstants_le (v : Place F FF) : fieldOfConstants F FF ≤ v.t
 end IsFunctionField
 
 end Place
-
+#minimize_imports
 #exit
 
 /-
