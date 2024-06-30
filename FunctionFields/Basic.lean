@@ -19,6 +19,8 @@ For now, we set up our own version as a structure `AlgFunctionField1`.
 
 We follow Chapter I of the textbook *Algebraic Function Fields and Codes*
 by Henning Stichtenoth (Springer Universitext, 1993).
+
+Authors: Arend Mellendijk, Michael Stoll, Junyan Xu
 -/
 
 /-!
@@ -92,6 +94,7 @@ lemma IsFunctionField.functionField {F FF : Type} [Field F] [Field FF] [Algebra 
 end Def
 
 section Transcendental
+
 /-!
 ### Transcendental elements
 
@@ -102,9 +105,15 @@ The goal here is to show that if `x : FF` is transcendental over `F`, then
 open scoped IntermediateField
 
 variable {F FF} [Field F] [Field FF] [Algebra F FF]
+
 #check IntermediateField.adjoin_simple_adjoin_simple
 #check IntermediateField.AdjoinSimple.gen
 #check IntermediateField.AdjoinSimple.coe_gen
+
+lemma IntermediateField.adjoin_le_iff' {S : Set FF} {E : IntermediateField F FF} :
+    IntermediateField.adjoin F S ≤ E ↔ S ⊆ E :=
+  IntermediateField.adjoin_le_iff
+
 def RatFunc.algHom_intermediateField_of_not_isAlgebraic {x : FF} (hx : ¬ IsAlgebraic F x) :
     RatFunc F →ₐ[F] F⟮x⟯ :=
   letI x' := IntermediateField.AdjoinSimple.gen F x
@@ -122,6 +131,15 @@ def RatFunc.algHom_intermediateField_of_not_isAlgebraic {x : FF} (hx : ¬ IsAlge
       simp_rw [←this]
       exact Subalgebra.aeval_coe F⟮x⟯.toSubalgebra (IntermediateField.AdjoinSimple.gen F x) c
     simp [this, h]
+
+lemma RatFunc.algHom_intermediateField_of_not_isAlgebraic_bijective {x : FF} (hx : ¬ IsAlgebraic F x) :
+    Function.Bijective (algHom_intermediateField_of_not_isAlgebraic hx) := by
+  refine ⟨?_, ?_⟩
+  · exact (injective_iff_map_eq_zero (algHom_intermediateField_of_not_isAlgebraic hx)).2
+      fun a ↦ (map_eq_zero _).mp
+  · refine AlgHom.fieldRange_eq_top.mp ?_
+
+    sorry
 
 /-- The `F`-algebra homomorphism from `RatFunc F` to `FF` given by evaluating at a
 transcendental element of `FF`. -/
