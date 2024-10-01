@@ -2,6 +2,9 @@ import Mathlib.NumberTheory.FunctionField
 import Mathlib.Order.CompletePartialOrder
 import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 import Mathlib
+
+set_option lang.lemmaCmd true -- why should this be necessary here?
+
 /-!
 # Algebraic function fields of one variable
 
@@ -106,9 +109,9 @@ open scoped IntermediateField
 
 variable {F FF} [Field F] [Field FF] [Algebra F FF]
 
-#check IntermediateField.adjoin_simple_adjoin_simple
-#check IntermediateField.AdjoinSimple.gen
-#check IntermediateField.AdjoinSimple.coe_gen
+-- #check IntermediateField.adjoin_simple_adjoin_simple
+-- #check IntermediateField.AdjoinSimple.gen
+-- #check IntermediateField.AdjoinSimple.coe_gen
 
 lemma IntermediateField.adjoin_le_iff' {S : Set FF} {E : IntermediateField F FF} :
     IntermediateField.adjoin F S ≤ E ↔ S ⊆ E :=
@@ -168,8 +171,6 @@ def RatFunc.algEquiv_of_not_isAlgebraic {x : FF} (hx : ¬ IsAlgebraic F x) :
     RatFunc F ≃ₐ[F] F⟮x⟯ := by
   let f := algHom_of_not_isAlgebraic hx
   refine AlgEquiv.ofBijective f ?_ -/
-
-#where
 
 end Transcendental
 
@@ -235,24 +236,25 @@ lemma Place.isFractionRing (v : Place F FF) : IsFractionRing v.toSubalgebra FF :
 lemma Place.fieldOfConstants_le (v : Place F FF) : fieldOfConstants F FF ≤ v.toSubalgebra :=
   have : IsFractionRing v.toSubalgebra FF := v.isFractionRing
   have : IsIntegrallyClosedIn v.toSubalgebra FF :=
-    isIntegrallyClosed_iff_isIntegrallyClosedIn FF |>.mp inferInstance
+    isIntegrallyClosed_iff_isIntegrallyClosedIn FF |>.mp sorry -- inferInstance
   integralClosure_le_subAlgebra_of_isIntegrallyClosedIn _
+
 variable (v : Place F FF)
 
-abbrev Place.ResidueField := LocalRing.ResidueField v.toSubalgebra
+abbrev Place.ResidueField := LocalRing.ResidueField v.toValuationSubring
 
 noncomputable instance : Algebra F v.ResidueField :=
   (algebraMap v.toSubalgebra v.ResidueField).comp (algebraMap F v.toSubalgebra) |>.toAlgebra
 
 noncomputable def Place.degree (v : Place F FF) : ℕ :=
-  FiniteDimensional.finrank F (LocalRing.ResidueField v.toSubalgebra)
+  FiniteDimensional.finrank F v.ResidueField
 
 instance Place.instIsNoetherianRing (h : IsFunctionField F FF) (v : Place F FF) : IsNoetherianRing v.toSubalgebra := by
   sorry
 
 instance (h : IsFunctionField F FF) (v : Place F FF) (h_field : ¬ IsField v.toSubalgebra) : DiscreteValuationRing v.toSubalgebra := by
   have : IsNoetherianRing v.toSubalgebra := by exact Place.instIsNoetherianRing h v
-  simp_rw [(DiscreteValuationRing.TFAE v.toSubalgebra h_field).out 0 1]
+  simp_rw [(DiscreteValuationRing.TFAE v.toSubalgebra h_field).out 0 1] -- failed to synthesize LocalRing ↥v.toSubalgebra
   infer_instance
 
 open scoped IntermediateField
@@ -269,4 +271,4 @@ end IsFunctionField
 
 end Place
 
---#minimize_imports
+--#min_imports
