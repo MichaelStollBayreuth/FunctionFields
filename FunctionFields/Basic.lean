@@ -254,8 +254,9 @@ instance Place.instIsNoetherianRing (h : IsFunctionField F FF) (v : Place F FF) 
 
 instance (h : IsFunctionField F FF) (v : Place F FF) (h_field : ¬ IsField v.toSubalgebra) : DiscreteValuationRing v.toSubalgebra := by
   have : IsNoetherianRing v.toSubalgebra := by exact Place.instIsNoetherianRing h v
-  simp_rw [(DiscreteValuationRing.TFAE v.toSubalgebra h_field).out 0 1] -- failed to synthesize LocalRing ↥v.toSubalgebra
-  infer_instance
+  sorry
+  -- simp_rw [(DiscreteValuationRing.TFAE v.toSubalgebra h_field).out 0 1] -- failed to synthesize LocalRing ↥v.toSubalgebra
+  -- infer_instance
 
 open scoped IntermediateField
 
