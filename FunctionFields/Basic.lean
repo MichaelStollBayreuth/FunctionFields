@@ -204,7 +204,7 @@ structure Place extends ValuationSubring FF, Subalgebra F FF
 
 variable {F FF}
 
-lemma Place.isLocalRing (v : Place F FF) : LocalRing v.toValuationSubring :=
+lemma Place.isLocalRing (v : Place F FF) : IsLocalRing v.toValuationSubring :=
   inferInstance
 
 -- A shortcut instance for speeding up tc synthesis below
@@ -241,18 +241,18 @@ lemma Place.fieldOfConstants_le (v : Place F FF) : fieldOfConstants F FF ≤ v.t
 
 variable (v : Place F FF)
 
-abbrev Place.ResidueField := LocalRing.ResidueField v.toValuationSubring
+abbrev Place.ResidueField := IsLocalRing.ResidueField v.toValuationSubring
 
 noncomputable instance : Algebra F v.ResidueField :=
   (algebraMap v.toSubalgebra v.ResidueField).comp (algebraMap F v.toSubalgebra) |>.toAlgebra
 
 noncomputable def Place.degree (v : Place F FF) : ℕ :=
-  FiniteDimensional.finrank F v.ResidueField
+  Module.finrank F v.ResidueField
 
 instance Place.instIsNoetherianRing (h : IsFunctionField F FF) (v : Place F FF) : IsNoetherianRing v.toSubalgebra := by
   sorry
 
-instance (h : IsFunctionField F FF) (v : Place F FF) (h_field : ¬ IsField v.toSubalgebra) : DiscreteValuationRing v.toSubalgebra := by
+instance (h : IsFunctionField F FF) (v : Place F FF) (h_field : ¬ IsField v.toSubalgebra) : IsDiscreteValuationRing v.toSubalgebra := by
   have : IsNoetherianRing v.toSubalgebra := by exact Place.instIsNoetherianRing h v
   sorry
   -- simp_rw [(DiscreteValuationRing.TFAE v.toSubalgebra h_field).out 0 1] -- failed to synthesize LocalRing ↥v.toSubalgebra
