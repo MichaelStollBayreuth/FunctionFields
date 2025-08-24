@@ -121,10 +121,8 @@ def RatFunc.algHom_intermediateField_of_not_isAlgebraic {x : FF} (hx : ¬ IsAlge
     RatFunc F →ₐ[F] F⟮x⟯ :=
   letI x' := IntermediateField.AdjoinSimple.gen F x
   liftAlgHom (Polynomial.aeval x') fun c hc ↦ by
-    simp only [mem_nonZeroDivisors_iff, mul_eq_zero, forall_eq_or_imp, true_and, Submonoid.mem_comap,
-      Submonoid.mem_mk, Subsemigroup.mem_mk, Set.mem_setOf_eq]
-    intro _ h
-    exfalso
+    simp only [Submonoid.mem_comap, mem_nonZeroDivisors_iff_ne_zero, ne_eq]
+    intro h
     apply hx
     rw [isAlgebraic_iff_not_injective, injective_iff_map_eq_zero]
     push_neg
