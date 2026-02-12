@@ -83,14 +83,14 @@ We can relate our definition to the definition currently in Mathlib.
 
 lemma FunctionField.isFunctionField {F FF : Type} [Field F] [Field FF] [Algebra (RatFunc F) FF]
     (h : FunctionField F FF) :
-    letI inst := (algebraMap (RatFunc F) FF).comp (algebraMap F (RatFunc F)) |>.toAlgebra
+    letI := (algebraMap (RatFunc F) FF).comp (algebraMap F (RatFunc F)) |>.toAlgebra
     IsFunctionField F FF := by
   let inst := ((algebraMap (RatFunc F) FF).comp (algebraMap F (RatFunc F))).toAlgebra
   refine ⟨inferInstance, IsScalarTower.of_algebraMap_eq (congrFun rfl), h⟩
 
 lemma IsFunctionField.functionField {F FF : Type} [Field F] [Field FF] [Algebra F FF]
     (h : IsFunctionField F FF) :
-    letI inst := Classical.choose h
+    letI := Classical.choose h
     FunctionField F FF :=
   Classical.choose_spec <| Classical.choose_spec h
 
