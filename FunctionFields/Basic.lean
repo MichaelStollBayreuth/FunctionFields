@@ -117,6 +117,7 @@ lemma IntermediateField.adjoin_le_iff' {S : Set FF} {E : IntermediateField F FF}
     IntermediateField.adjoin F S ≤ E ↔ S ⊆ E :=
   IntermediateField.adjoin_le_iff
 
+noncomputable
 def RatFunc.algHom_intermediateField_of_not_isAlgebraic {x : FF} (hx : ¬ IsAlgebraic F x) :
     RatFunc F →ₐ[F] F⟮x⟯ :=
   letI x' := IntermediateField.AdjoinSimple.gen F x
@@ -125,7 +126,7 @@ def RatFunc.algHom_intermediateField_of_not_isAlgebraic {x : FF} (hx : ¬ IsAlge
     intro h
     apply hx
     rw [isAlgebraic_iff_not_injective, injective_iff_map_eq_zero]
-    push_neg
+    push Not
     refine ⟨_, ?_, nonZeroDivisors.ne_zero hc⟩
     have := IntermediateField.AdjoinSimple.coe_gen F x
     have : Polynomial.aeval x c = Polynomial.aeval x' c := by
@@ -144,15 +145,19 @@ lemma RatFunc.algHom_intermediateField_of_not_isAlgebraic_bijective {x : FF} (hx
 
 /-- The `F`-algebra homomorphism from `RatFunc F` to `FF` given by evaluating at a
 transcendental element of `FF`. -/
+noncomputable
 def RatFunc.algHom_of_not_isAlgebraic {x : FF} (hx : ¬ IsAlgebraic F x) :
     RatFunc F →ₐ[F] FF :=
  (IntermediateField.val F⟮x⟯).comp (RatFunc.algHom_intermediateField_of_not_isAlgebraic hx)
 
+noncomputable
 def RatFunc.algebraOfNotIsAlgebraic {x : FF} (hx : ¬ IsAlgebraic F x) :
     Algebra (RatFunc F) F⟮x⟯ := (RatFunc.algHom_intermediateField_of_not_isAlgebraic hx).toAlgebra
 
 
-lemma tmp {x : FF} (hx : ¬ IsAlgebraic F x) : let _ : Module (RatFunc F) F⟮x⟯ := RatFunc.algebraOfNotIsAlgebraic hx |>.toModule; FiniteDimensional (RatFunc F) F⟮x⟯ := sorry
+lemma tmp {x : FF} (hx : ¬ IsAlgebraic F x) :
+    let _ : Module (RatFunc F) F⟮x⟯ := RatFunc.algebraOfNotIsAlgebraic hx |>.toModule
+    FiniteDimensional (RatFunc F) F⟮x⟯ := sorry
 
 lemma isFunctionField_of_not_isAlgebraic {x : FF} (hx : ¬ IsAlgebraic F x)
     (hfin : FiniteDimensional F⟮x⟯ FF) :
